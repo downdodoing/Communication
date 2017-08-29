@@ -12,40 +12,82 @@ import com.example.mvp.communication.entity.Msg;
 
 import java.util.List;
 
-public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHoder> {
+public class RecyclerViewAdapter extends RecyclerView.Adapter {
 
     private List<Msg> mData;
+
+    public final static int LOADING_MORE = 0;//上拉加载更多
+    public final static int LOADING = 1;//正在加载
+    public final static int LOADING_FINISH = 2;//暂无数据
+
+    private int state = LOADING_MORE;//加载数据状态
 
     public RecyclerViewAdapter(List<Msg> mData) {
         this.mData = mData;
     }
 
     @Override
-    public void onBindViewHolder(ViewHoder holder, int position) {
-        Msg msg = mData.get(position);
-        if (Msg.TYPE_RECEIVED == msg.getType()) {
-            holder.left_ll.setVisibility(View.VISIBLE);
-            holder.right_ll.setVisibility(View.GONE);
-            holder.left_txt.setText(msg.getContent());
-        } else if (Msg.TYPE_SENT == msg.getType()) {
-            holder.left_ll.setVisibility(View.GONE);
-            holder.right_ll.setVisibility(View.VISIBLE);
-            holder.right_txt.setText(msg.getContent());
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        Log.i("RecyclerViewAdapter", "onBindViewHolder: " + position);
+        if (holder instanceof ViewHoder) {
+            Msg msg = mData.get(position);
+            if (Msg.TYPE_RECEIVED == msg.getType()) {
+                ((ViewHoder) holder).left_ll.setVisibility(View.VISIBLE);
+                ((ViewHoder) holder).right_ll.setVisibility(View.GONE);
+                ((ViewHoder) holder).left_txt.setText(msg.getContent());
+            } else if (Msg.TYPE_SENT == msg.getType()) {
+                ((ViewHoder) holder).left_ll.setVisibility(View.GONE);
+                ((ViewHoder) holder).right_ll.setVisibility(View.VISIBLE);
+                ((ViewHoder) holder).right_txt.setText(msg.getContent());
+            }
+        } else if (holder instanceof FooterViewHoder) {
+            String state_str = "";
+            switch (state) {
+                case LOADING_MORE:
+                    state_str = "上拉加载更多";
+                    break;
+                case LOADING:
+                    state_str = "正在加载";
+                    break;
+                case LOADING_FINISH:
+                    state_str = "暂无数据";
+                    break;
+            }
+            ((FooterViewHoder) holder).textView.setText(state_str);
         }
-
-        Log.d("MainActivity", "onBindViewHolder: " + msg.getContent());
     }
 
     @Override
-    public ViewHoder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recycler_item, parent, false);
-        Log.i("msg.getContent()", "onCreateViewHolder: ");
-        return new ViewHoder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view = null;
+        if (1 == viewType) {
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item, parent, false);
+            return new FooterViewHoder(view);
+        } else if (0 == viewType) {
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recycler_item, parent, false);
+            return new ViewHoder(view);
+        }
+        return null;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        if (position + 1 == getItemCount()) {
+            return 1;//显示底部
+        } else {
+            return 0;
+        }
     }
 
     @Override
     public int getItemCount() {
-        return mData.size();
+        return mData.size() + 1;
+    }
+
+    //改变状态
+    public void setState(int state) {
+        this.state = state;
+        notifyItemChanged(mData.size());
     }
 
     static class ViewHoder extends RecyclerView.ViewHolder {
@@ -62,6 +104,15 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
             left_txt = (TextView) view.findViewById(R.id.left_txt);
             right_txt = (TextView) view.findViewById(R.id.right_txt);
+        }
+    }
+
+    static class FooterViewHoder extends RecyclerView.ViewHolder {
+        TextView textView;
+
+        public FooterViewHoder(View itemView) {
+            super(itemView);
+            textView = (TextView) itemView.findViewById(R.id.text);
         }
     }
 }

@@ -7,8 +7,11 @@ import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.Toast;
 
 import com.example.mvp.communication.entity.Msg;
 
@@ -29,33 +32,54 @@ public class MainActivity extends AppCompatActivity {
 
     private String content;
     Random mRandom;
+    boolean isClick = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         init();
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(layoutManager);
 
         mAdapter = new RecyclerViewAdapter(mData);
         mRecyclerView.setAdapter(mAdapter);
+        addScrollLisener();
+    }
+
+    private void addScrollLisener() {
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+
+            }
+        });
     }
 
     public void click(View view) {
-        content = mEditText.getText().toString();
-        int type = mRandom.nextInt(2);
-        Log.i(TAG, "click: " + type);
-        if (!TextUtils.isEmpty(content)) {
-            mData.add(new Msg(content, type));
-            mAdapter.notifyItemInserted(mData.size() - 1);//插入到最后一行
-            mRecyclerView.scrollToPosition(mData.size() - 1);//定位到最后一行
-            mEditText.setText("");
+        if (view.getId() == R.id.send) {
+            content = mEditText.getText().toString();
+            int type = mRandom.nextInt(2);
+            if (!TextUtils.isEmpty(content)) {
+                mData.add(new Msg(content, type));
+                mAdapter.notifyItemInserted(mData.size() - 1);//插入到最后一行
+                // mRecyclerView.scrollToPosition(mData.size() - 1);//定位到最后一行
+                mEditText.setText("");
+            }
+        } else if (view.getId() == R.id.remove) {
+            if (!isClick) {
+                mRecyclerView.getChildAt(mData.size()).setVisibility(View.VISIBLE);
+                isClick = true;
+            } else {
+                mRecyclerView.getChildAt(mData.size()).setVisibility(View.GONE);
+                isClick = false;
+            }
         }
     }
 
     private void init() {
+
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mSendBnt = (Button) findViewById(R.id.send);
         mEditText = (EditText) findViewById(R.id.edit_txt);
